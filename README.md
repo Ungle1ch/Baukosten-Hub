@@ -51,7 +51,6 @@ HTML5/Vanilla-JS/Tailwind (CDN), Chart.js, Lucide Icons – komplett Zero-Build.
      aus dem Browser auf die API zugreifen darf.
 7. **„Bereitstellen"** klicken → ggf. erneut autorisieren → die **Web-App-URL**
    kopieren (endet auf `/exec`):
-   `https://script.google.com/macros/s/AKfycbyJROUaDjDEE7vX6FReR7ZcaPsPO-hNr-kt04h7o4dGpKzUa6_lZsg867-mZmpPw03i/exec`
    - Test: URL **mit Token** im Browser öffnen – es erscheint ein JSON wie
      `{"ok":true,"payments":[],"budget":[...],...}`:
      `…/exec?token=<DEIN_TOKEN>`
@@ -72,7 +71,6 @@ HTML5/Vanilla-JS/Tailwind (CDN), Chart.js, Lucide Icons – komplett Zero-Build.
    Branch `main` (oder `master`), Ordner `/ (root)` → **Save**.
 4. Nach 1–2 Minuten ist die App unter
    `https://<user>.github.io/<repo>/` erreichbar.
-   https://ungle1ch.github.io/Baukosten-Hub/
    - **HTTPS ist Pflicht** für Service Worker / PWA-Installation (GitHub Pages
      liefert automatisch HTTPS).
 
