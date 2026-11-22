@@ -1,0 +1,20 @@
+{
+  "name": "Baukosten Hub – 50/50 Baukosten",
+  "short_name": "Baukosten Hub",
+  "description": "Verwaltung von Fertighaus-Baukosten mit 50/50-Aufteilung zwischen zwei Bauherren.",
+  "lang": "de-DE",
+  "dir": "ltr",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#020617",
+  "theme_color": "#4f46e5",
+  "categories": ["finance", "utilities", "productivity"],
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
