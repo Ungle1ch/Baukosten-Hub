@@ -5,7 +5,7 @@
  *    (damit App-Updates sofort greifen), Cache nur als Offline-Fallback
  *  - Fremdanbieter (CDN, Fonts): CACHE-FIRST, damit die App offline startet
  * ========================================================================== */
-const CACHE_NAME = 'baukosten-hub-v2';
+const CACHE_NAME = 'baukosten-hub-v3';
 
 const APP_SHELL = [
   './',
