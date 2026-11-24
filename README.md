@@ -25,6 +25,7 @@ reines HTML5/Vanilla-JS/Tailwind (CDN), Chart.js, Lucide Icons – Zero-Build.
 - `Datum` = Zahlungsdatum (bei offen/geplant leer oder Rechnungsdatum)
 - `Faellig_Am`: ISO-Datum, v. a. für offen/geplant
 - `Quelle_ID`: Verweis auf `Finanzierung.ID`
+- `Gezahlt_Von`: Name A, Name B, **`Beide`** (= von beiden gemeinsam, z. B. Gemeinschaftskonto → wird in der Ausgleichsrechnung je zur Hälfte A und B zugerechnet) oder leer. Hinweis: „Beide" nicht als Personenname verwenden.
 
 **Blatt `Budget_Planung`:** `Gewerk, Geplantes_Budget`
 

@@ -19,6 +19,7 @@ const STATUS_BADGE = { bezahlt: 'badge-paid', offen: 'badge-open', geplant: 'bad
 const FIN_TYPES = ['Eigenkapital', 'Darlehen', 'KfW', 'Förderung', 'Sonstiges'];
 const CHART_COLORS = ['#6366f1', '#22d3ee', '#f59e0b', '#10b981', '#f43f5e', '#8b5cf6', '#eab308', '#ec4899'];
 const COLOR_A = '#6366f1', COLOR_B = '#22d3ee';
+const BOTH = 'Beide'; // Sentinel für „von beiden gemeinsam bezahlt" (Gezahlt_Von)
 
 const LS_CONFIG = 'bh_config';
 const LS_THEME = 'bh_theme';
@@ -196,11 +197,13 @@ function computeStats() {
     if (!perGewerk[g]) perGewerk[g] = { paid: 0, open: 0, planned: 0, budget: 0 };
     if (p.Status === 'bezahlt') {
       paid += amt; perGewerk[g].paid += amt;
-      if (p.Gezahlt_Von === a) paidA += amt; else if (p.Gezahlt_Von === b) paidB += amt;
+      if (p.Gezahlt_Von === BOTH) { paidA += amt / 2; paidB += amt / 2; } // gemeinsames Konto: 50/50
+      else if (p.Gezahlt_Von === a) paidA += amt; else if (p.Gezahlt_Von === b) paidB += amt;
       if (p.Aufteilung === '100/0') shareA += amt; else if (p.Aufteilung === '0/100') shareB += amt;
       else { shareA += amt / 2; shareB += amt / 2; }
       if (!perPersonGewerk[g]) perPersonGewerk[g] = { A: 0, B: 0 };
-      perPersonGewerk[g][p.Gezahlt_Von === a ? 'A' : 'B'] += amt;
+      if (p.Gezahlt_Von === BOTH) { perPersonGewerk[g].A += amt / 2; perPersonGewerk[g].B += amt / 2; }
+      else perPersonGewerk[g][p.Gezahlt_Von === a ? 'A' : 'B'] += amt;
       const key = String(p.Datum || '').slice(0, 7);
       if (key.length === 7) monthly[key] = (monthly[key] || 0) + amt;
     } else if (p.Status === 'offen') { open += amt; perGewerk[g].open += amt; if (isOverdue(p)) overdue += amt; }
@@ -409,10 +412,8 @@ function renderChips(containerId, values, current, onPick) {
 
 function renderPersonChips() {
   const a = state.config?.nameA || 'Person A', b = state.config?.nameB || 'Person B';
-  renderChips('#personChips', [a, b], state.filter.person, (v) => { state.filter.person = v; renderZahlungenChips(); renderTransactions(); });
-  // aktuelle Werte mit Namen rendern: Chips mit 'Alle' + Namen
   const box = $('#personChips');
-  box.innerHTML = ['Alle', a, b].map((v) => `<button class="chip ${state.filter.person === v ? 'active' : ''}" data-v="${esc(v)}">${esc(v)}</button>`).join('');
+  box.innerHTML = ['Alle', a, b, BOTH].map((v) => `<button class="chip ${state.filter.person === v ? 'active' : ''}" data-v="${esc(v)}">${esc(v)}</button>`).join('');
   box.querySelectorAll('.chip').forEach((c) => c.addEventListener('click', () => { state.filter.person = c.dataset.v; renderPersonChips(); renderTransactions(); }));
 }
 
@@ -452,6 +453,7 @@ function filteredPayments() {
 function txCardHtml(p) {
   const a = state.config?.nameA || 'Person A', b = state.config?.nameB || 'Person B';
   const payerIsA = p.Gezahlt_Von === a;
+  const payerBadge = p.Gezahlt_Von === BOTH ? 'badge-tag' : payerIsA ? 'badge-a' : 'badge-b';
   const splitCls = p.Aufteilung === '50/50' ? 'badge-split' : (p.Aufteilung === '100/0' ? 'badge-a' : 'badge-b');
   const tags = parseTags(p.Tags);
   const fin = state.financing.find((f) => f.ID === p.Quelle_ID);
@@ -466,7 +468,7 @@ function txCardHtml(p) {
       <div class="flex items-center gap-1.5 mt-1 flex-wrap text-xs text-slate-500 dark:text-slate-400">
         <span>${esc(fmtDate(p.Datum || p.Faellig_Am))}</span><span>·</span><span>${esc(p.Gewerk)}</span>
         ${p.Firma ? `<span>·</span><span class="font-medium">${esc(p.Firma)}</span>` : ''}
-        ${p.Gezahlt_Von ? `<span class="badge ${payerIsA ? 'badge-a' : 'badge-b'}">${esc(p.Gezahlt_Von)}</span>` : ''}
+        ${p.Gezahlt_Von ? `<span class="badge ${payerBadge}">${esc(p.Gezahlt_Von)}</span>` : ''}
         <span class="badge ${splitCls}">${esc(SPLIT_LABELS[p.Aufteilung] || p.Aufteilung)}</span>
         <span class="badge ${STATUS_BADGE[p.Status] || 'badge-planned'}">${esc(STATUS_LABELS[p.Status] || 'bezahlt')}</span>
         ${overdue ? '<span class="badge badge-overdue">überfällig</span>' : ''}
@@ -520,7 +522,7 @@ function offenItemHtml(p) {
       <div class="text-xs text-slate-500 dark:text-slate-400 flex gap-1.5 items-center flex-wrap mt-0.5">
         <span class="${overdue ? 'text-rose-500 font-bold' : soon ? 'text-amber-500 font-semibold' : ''}">${p.Faellig_Am ? 'fällig ' + esc(fmtDate(p.Faellig_Am)) : 'kein Fälligkeitsdatum'}</span>
         <span>·</span><span>${esc(p.Gewerk)}</span>
-        ${p.Gezahlt_Von ? `<span class="badge ${p.Gezahlt_Von === (state.config?.nameA) ? 'badge-a' : 'badge-b'}">${esc(p.Gezahlt_Von)}</span>` : ''}
+        ${p.Gezahlt_Von ? `<span class="badge ${p.Gezahlt_Von === BOTH ? 'badge-tag' : p.Gezahlt_Von === (state.config?.nameA) ? 'badge-a' : 'badge-b'}">${esc(p.Gezahlt_Von)}</span>` : ''}
         ${tags.map((t) => `<span class="badge badge-tag">${esc(t)}</span>`).join('')}
       </div>
     </div>
@@ -588,8 +590,8 @@ function renderAuswertungen() {
   // 3) Anteile pro Person (Donut)
   const a = state.config?.nameA || 'Person A', b = state.config?.nameB || 'Person B';
   const paidInPeriod = paid.reduce((s2, p) => s2 + (Number(p.Betrag) || 0), 0);
-  const paidA = paid.filter((p) => p.Gezahlt_Von === a).reduce((s2, p) => s2 + (Number(p.Betrag) || 0), 0);
-  const paidB = paidInPeriod - paidA;
+  const paidA = paid.reduce((s2, p) => s2 + (p.Gezahlt_Von === BOTH ? (Number(p.Betrag) || 0) / 2 : p.Gezahlt_Von === a ? (Number(p.Betrag) || 0) : 0), 0);
+  const paidB = paid.reduce((s2, p) => s2 + (p.Gezahlt_Von === BOTH ? (Number(p.Betrag) || 0) / 2 : p.Gezahlt_Von === b ? (Number(p.Betrag) || 0) : 0), 0);
   const c3 = $('#chPerson');
   $('#emptyPerson').classList.toggle('hidden', paidInPeriod > 0);
   if (paidInPeriod > 0) {
@@ -759,7 +761,7 @@ function openPaymentModal(p = null) {
   state.formTags = p ? parseTags(p.Tags) : [];
   renderFormTagChips();
   setSeg('#segStatus', p?.Status || 'bezahlt', 'segStatus');
-  setSeg('#segPayer', p ? (p.Gezahlt_Von === (state.config?.nameB) ? 'B' : p.Gezahlt_Von === (state.config?.nameA) ? 'A' : '') : 'A', 'segPayer');
+  setSeg('#segPayer', p ? (p.Gezahlt_Von === BOTH ? 'BOTH' : p.Gezahlt_Von === (state.config?.nameB) ? 'B' : p.Gezahlt_Von === (state.config?.nameA) ? 'A' : '') : 'A', 'segPayer');
   setSeg('#segSplit', p?.Aufteilung || '50/50', 'segSplit');
   updateStatusVisibility();
   // Datalist Firmen
@@ -821,7 +823,7 @@ function collectPaymentFromForm() {
     Status: state.segStatus,
     Datum: state.segStatus === 'bezahlt' ? $('#fDatum').value : ($('#fDatum').value || ''),
     Faellig_Am: state.segStatus === 'bezahlt' ? '' : ($('#fFaellig').value || ''),
-    Gezahlt_Von: state.segPayer === 'A' ? a : state.segPayer === 'B' ? b : '',
+    Gezahlt_Von: state.segPayer === 'A' ? a : state.segPayer === 'B' ? b : state.segPayer === 'BOTH' ? BOTH : '',
     Aufteilung: state.segSplit,
     Quelle_ID: $('#fQuelle').value || '',
     Tags: state.formTags.join(', '),
@@ -887,7 +889,7 @@ function closePaidModal() { const m = $('#paidModal'); m.classList.add('hidden')
 function renderPaidPersonOptions(prefill = '') {
   const a = state.config?.nameA || 'Person A', b = state.config?.nameB || 'Person B';
   const sel = $('#paidPerson');
-  sel.innerHTML = `<option value="${esc(a)}">${esc(a)}</option><option value="${esc(b)}">${esc(b)}</option>`;
+  sel.innerHTML = `<option value="${esc(a)}">${esc(a)}</option><option value="${esc(b)}">${esc(b)}</option><option value="${esc(BOTH)}">${esc(BOTH)} (gemeinsam)</option>`;
   sel.value = prefill || a;
 }
 
